@@ -4,29 +4,32 @@ const exec = require('child_process').exec;
 
 exports.handler = (event, context) => {
   const start = Date.now();
+  const s3 = new AWS.S3({ signatureVersion: 'v4' });
 
   exec("./runme64", (error, stdout, stderr) => {
-    const s3 = new AWS.S3({ signatureVersion: 'v4' });
-
     const end = Date.now();
-    const diff = end - start
-    const output = stdout + start + " " + end + " " + diff.toString();
+    const diff = end - start;
+    const output = stdout + start + " " + end + " " + diff;
+    const filePath = event.experiment + "/" +
+     context.memoryLimitInMB + "/" + event.name;
 
     s3.putObject({
       Bucket: 'agajek-lambda',
-      Key: event.dir + "/linpack",
+      Key: filePath,
       Body: output,
       ACL: 'public-read'
-    }, s3Callback);
+    }, callback(output));
   });
 
-  function s3Callback(err, resp) {
-    if(err) {
-      console.log(err);
-      context.fail(err.message);
-    } else {
-      console.log('Successfully uploaded package.');
-      context.succeed(resp);
+  function callback(output) {
+    return (err, resp) => {
+      if(err) {
+        console.log(err);
+        context.fail(err.message);
+      } else {
+        console.log('Successfully uploaded package.');
+        context.succeed(output);
+      }
     }
   }
 };
