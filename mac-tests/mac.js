@@ -8,10 +8,15 @@ exports.handler = (event, context) => {
 
   exec("./runme64", (error, stdout, stderr) => {
     const end = Date.now();
-    const diff = end - start
-    const output = stdout + start + " " + end + " " + diff;
+    const diff = end - start;
+
+    const rows = stdout.split("\n")
+    const row = rows[rows.length - 8];
+    const flops = parseFloat(row.split(/[\s,]+/)[4]);
+
+    const output = flops + " " + start + " " + end + " " + diff;
     const filePath = event.experiment + "/" +
-     context.memoryLimitInMB + "/" + event.name
+     context.memoryLimitInMB + "/" + event.name;
 
     s3.putObject({
       Bucket: 'agajek-lambda',
